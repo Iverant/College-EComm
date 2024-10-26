@@ -1,0 +1,63 @@
+{% extends 'myapp/base.html' %}
+{% block content %}
+<h1 class="text-2xl m-10 font-bold ">Buy Product</h1>
+<form class="w-3/5 bg-white shadow-md px-8 py-8" method="POST">
+    {% csrf_token %}
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity">Quantity</label>
+        <input class="shadow appearance-none border rounded py-2 px-3 mr-10 text-gray-700" placeholder="quantity" type="number" name="quantity" id="quantity" min="1" max="{{ product.quantity }}" oninput="updateTotal()">
+    </div>
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="total">Total Amount</label>
+        <input class="shadow appearance-none border rounded py-2 px-3 mr-10 text-gray-700" type="text" id="total" readonly>
+    </div>
+    <!-- <input class="bg-green-500 text-white px-5 py-2" type="submit" value="Confirm Purchase"> -->
+    <button id="rzp-button1" class="bg-green-500 text-white px-5 py-2" type="submit">Pay with Razorpay</button>
+</form>
+
+<script>
+    function updateTotal() {
+        const quantity = document.getElementById('quantity').value;
+        const price = parseFloat("{{ product.price|floatformat:2 }}");
+        const total = quantity * price;
+        document.getElementById('total').value = total.toFixed(2);
+    }
+</script>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    var options = {
+        "key": "rzp_test_iAXoYqImBUMKhy", // Enter the Key ID generated from the Dashboard
+        "amount": "{{payment.amount}}", // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+        "currency": "INR",
+        "name": "College Ecom",
+        "description": "Test Transaction",
+        "image": "https://example.com/your_logo",
+        "order_id": "{{payment.id}}", //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+        "handler": function (response){
+            alert(response.razorpay_payment_id);
+            alert(response.razorpay_order_id);
+            alert(response.razorpay_signature)
+        },
+
+        "theme": {
+            "color": "#3399cc"
+        }
+    };
+    var rzp1 = new Razorpay(options);
+    rzp1.on('payment.failed', function (response){
+            alert(response.error.code);
+            alert(response.error.description);
+            alert(response.error.source);
+            alert(response.error.step);
+            alert(response.error.reason);
+            alert(response.error.metadata.order_id);
+            alert(response.error.metadata.payment_id);
+    });
+    document.getElementById('rzp-button1').onclick = function(e){
+        rzp1.open();
+        e.preventDefault();
+    }
+    </script>
+
+{% endblock %}
